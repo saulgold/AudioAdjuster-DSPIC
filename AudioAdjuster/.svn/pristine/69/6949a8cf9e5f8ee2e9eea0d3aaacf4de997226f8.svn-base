@@ -1,0 +1,116 @@
+/**********************************************************************
+* 
+************************************************************************/
+#include <p33FJ256GP506.h>
+#include <board\inc\sask.h>
+#include <board\inc\ex_sask_generic.h>
+#include <dsp\inc\dsp.h>
+#include <peripherals\adc\inc\ADCChannelDrv.h>
+#include <peripherals\pwm\inc\OCPWMDrv.h>
+
+#include "..\inc\filter.h"
+#include "..\inc\modulator.h"
+#include "..\inc\complexmultiply.h"
+
+#define FRAME_SIZE 				128			
+
+/* Allocate memory for input and output buffers	*/
+
+fractional		adcBuffer		[ADC_CHANNEL_DMA_BUFSIZE] 	__attribute__((space(dma)));
+fractional		ocPWMBuffer		[OCPWM_DMA_BUFSIZE]		__attribute__((space(dma)));
+
+fractional		frctAudioIn			[FRAME_SIZE];
+fractional		frctAudioWorkSpace	[FRAME_SIZE];
+fractional		frctAudioOut		[FRAME_SIZE];
+fractcomplex	compAudioOut		[FRAME_SIZE];
+fractcomplex	compCarrierSignal	[FRAME_SIZE];
+
+/* Instantiate the drivers 	*/
+ADCChannelHandle adcChannelHandle;
+OCPWMHandle 	ocPWMHandle;
+
+/* Create the driver handles	*/
+ADCChannelHandle *pADCChannelHandle 	= &adcChannelHandle;
+OCPWMHandle 	*pOCPWMHandle 		= &ocPWMHandle;
+
+int main(void)
+{
+	int Switch1Pressed = 0;
+	int Switch2Pressed = 0;
+	float CarrierFrequency = 1;
+	CreateCarrierSignal(CarrierFrequency,FRAME_SIZE,compCarrierSignal);
+	initFilter();
+
+	ex_sask_init( );
+
+	/* Initialise Audio input and output function	*/
+	ADCChannelInit	(pADCChannelHandle,adcBuffer);			
+	OCPWMInit		(pOCPWMHandle,ocPWMBuffer);			
+
+	/* Start Audio input and output function	*/
+	ADCChannelStart	(pADCChannelHandle);
+	OCPWMStart		(pOCPWMHandle);	
+	
+	while(1)
+	{		
+		/* Obtaing the ADC samples	*/
+		while(ADCChannelIsBusy(pADCChannelHandle));
+		ADCChannelRead	(pADCChannelHandle,frctAudioIn,FRAME_SIZE);
+
+		/*switch 1 is used to increase the modulation frequency and switch 2 is used to decrease it*/
+
+		if(CheckSwitchS1() == 1)//if switch 1 is currently pressed  
+		{
+			if(Switch1Pressed == 0)//if switch 1 has just transitioned unpressed to pressed
+			{
+				if(CarrierFrequency < 625)
+				{
+					CarrierFrequency += 1;//62.5;	
+				}
+				CreateCarrierSignal(CarrierFrequency,FRAME_SIZE,compCarrierSignal);
+				Switch1Pressed = 1;
+				GREEN_LED = SASK_LED_ON;
+				YELLOW_LED = SASK_LED_ON;
+				RED_LED = SASK_LED_OFF;			
+			}		
+		}
+		else if(Switch1Pressed == 1)//if switch 1 has just transitioned pressed to unpressed
+		{
+			Switch1Pressed = 0;
+			YELLOW_LED = SASK_LED_OFF;		
+		}
+	
+		if((CheckSwitchS2()) == 1)//if switch 2 is currently pressed
+		{
+			if(Switch2Pressed == 0)//if switch 2 has just transitioned unpressed to pressed
+			{
+				if(CarrierFrequency > 63.5)
+				{
+					CarrierFrequency -= 1;//62.5;	
+				}
+				CreateCarrierSignal(CarrierFrequency,FRAME_SIZE,compCarrierSignal);
+				Switch2Pressed = 1;
+				GREEN_LED = SASK_LED_OFF;
+				YELLOW_LED = SASK_LED_ON;
+				RED_LED = SASK_LED_ON;			
+			}
+		}
+		else if(Switch2Pressed == 1)//if switch 2 has just transitioned pressed to unpressed
+		{
+			Switch2Pressed = 0;
+			YELLOW_LED = SASK_LED_OFF;		
+		}
+		filter(frctAudioIn,frctAudioWorkSpace,FRAME_SIZE);
+
+		CombinationVectorMultiply(FRAME_SIZE,frctAudioOut,compAudioOut,frctAudioWorkSpace,compCarrierSignal);
+
+		/* Wait till the OC is available for a new  frame	*/
+		while(OCPWMIsBusy(pOCPWMHandle));	
+	
+		/* Write the frame to the output	*/
+		OCPWMWrite (pOCPWMHandle,frctAudioOut,FRAME_SIZE);	
+	}
+
+	ADCChannelStop	(pADCChannelHandle);
+	OCPWMStop	(pOCPWMHandle);	
+}

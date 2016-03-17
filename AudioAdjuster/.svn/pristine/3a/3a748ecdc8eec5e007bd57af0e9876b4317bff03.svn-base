@@ -1,0 +1,9 @@
+#ifndef __COMPLEX_MULTIPLY_H__
+#define __COMPLEX_MULTIPLY_H__
+
+#include <dsp\inc\dsp.h>
+
+void ComplexVectorMultiply(int VectorSize,fractcomplex *Result,fractcomplex *Value1,fractcomplex *Value2);
+void CombinationVectorMultiply(int VectorSize,fractional *Result1,fractcomplex *Result2,fractional *Value1,fractcomplex *Value2);
+
+#endif

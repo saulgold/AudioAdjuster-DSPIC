@@ -1,0 +1,119 @@
+#include "..\inc\filter.h"
+#include <dsp.h>
+
+#define FILTER_LENGTH 				47
+
+float fFilterCoefficients[FILTER_LENGTH] = 
+{
+	0.0019,
+   -0.0136,
+   -0.0385,
+    0.0048,
+   -0.0250,
+   -0.0008,
+   -0.0255,
+   -0.0059,
+   -0.0242,
+   -0.0142,
+   -0.0189,
+   -0.0265,
+   -0.0095,
+   -0.0423,
+    0.0032,
+   -0.0599,
+    0.0173,
+   -0.0772,
+    0.0308,
+   -0.0919,
+    0.0413,
+   -0.1017,
+    0.0471,
+    0.8948,
+    0.0471,
+   -0.1017,
+    0.0413,
+   -0.0919,
+    0.0308,
+   -0.0772,
+    0.0173,
+   -0.0599,
+    0.0032,
+   -0.0423,
+   -0.0095,
+   -0.0265,
+   -0.0189,
+   -0.0142,
+   -0.0242,
+   -0.0059,
+   -0.0255,
+   -0.0008,
+   -0.0250,
+    0.0048,
+   -0.0385,
+   -0.0136,
+    0.0019,
+};
+
+FIRStruct FilterStructure;
+
+fractional frctFilterCoefficients[FILTER_LENGTH]__attribute__ ((space(xmemory),far));
+fractional frctDelayBuffer[FILTER_LENGTH]__attribute__ ((space(ymemory),far));
+
+void initFilter()
+{
+	int i;
+
+	for (i=0;i<FILTER_LENGTH;i++)
+	{
+		frctFilterCoefficients[i] = Float2Fract(fFilterCoefficients[i]);
+	}
+
+	FIRStructInit(&FilterStructure,FILTER_LENGTH,frctFilterCoefficients,0xFF00,frctDelayBuffer);
+	FIRDelayInit(&FilterStructure);
+}
+
+void bandPassFilter(int iFrameSize,fractional *frctAudioWorkSpace,fractional *frctAudioIn)
+{
+	FIR(iFrameSize,frctAudioWorkSpace,frctAudioIn,&FilterStructure);	
+}
+/*
+void MyFilter(fractional *x, fractional *y,int FrameSize)
+{
+	int i;
+	fractcomplex H[16];
+	for(i=0;i<16;i++)
+	{
+		if(i>3||i<12)
+			H[i].real = 1;
+		else
+			H[i].real = 0;
+	}
+	fractcomplex twidFactors[16];
+	TwidFactorInit (4, &twidFactors[0], 1);
+	int factPage = COEFFS_IN_DATA;
+
+	fractcomplex c[16];
+
+	IFFTComplex(4,c,H,twidFactors,COEFFS_IN_DATA);
+
+	fractional filter[16];
+	fractional delay[16];
+
+	for(i=0;i<16;i++)
+	{
+		filter[i] = c[i].real;
+	}
+	FIRStruct MyFilter;
+	MyFilter.numCoeffs=FrameSize;
+	MyFilter.coeffsBase = &filter[0];
+	MyFilter.coeffsEnd = &filter[15];
+	MyFilter.coeffsPage = COEFFS_IN_DATA;
+	MyFilter.delayBase = &delay[0];
+	MyFilter.delayEnd = &delay[15];
+	MyFilter.delay = &delay[0];
+
+	FIRDelayInit(&MyFilter);
+
+	FIR (FrameSize,y,x,&MyFilter);
+}*/
+

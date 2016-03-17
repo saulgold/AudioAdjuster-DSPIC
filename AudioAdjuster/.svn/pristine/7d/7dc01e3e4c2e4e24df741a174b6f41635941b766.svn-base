@@ -1,0 +1,20 @@
+#include "..\inc\modulator.h"
+#include <dsp\inc\dsp.h>
+
+void createCarrierSignal(float fCarrierFrequency,int iFrameSize,fractcomplex *compCarrierSignal)
+{
+	int n;
+	float w;				/* angular frequency by which to shift */
+	float t, dt;
+	float Fs = 8000;		/* sampling frequency */
+	const float pi = 3.14159265359;
+
+	dt = 1 / Fs;				/* sampling interval */
+	w = 2 * pi * fCarrierFrequency;
+	for ( n = 0; n < iFrameSize; n++ )
+	{
+		t = n * dt;
+		compCarrierSignal[n].real = Float2Fract(cos( w * t ));
+		compCarrierSignal[n].imag = Float2Fract(sin( w * t ));
+	}
+}

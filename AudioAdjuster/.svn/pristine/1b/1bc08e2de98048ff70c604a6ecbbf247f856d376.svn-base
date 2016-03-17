@@ -1,0 +1,53 @@
+#include "..\inc\complexmultiply.h"
+#include <dsp.h>
+
+void complexVectorMultiply(int iVectorSize,fractcomplex *compResult,fractcomplex *compValue1,fractcomplex *compValue2)
+{
+	fractional a[iVectorSize],b[iVectorSize],c[iVectorSize],d[iVectorSize];//for real and imag parts of each number: (a + bj)(c + dj)
+
+	fractional ac[iVectorSize],bc[iVectorSize],ad[iVectorSize],bd[iVectorSize];//for multiply results: ac, bcj, adj, bd 
+
+	fractional acbd[iVectorSize],adbc[iVectorSize];//for addition results: ac + bd, adj + bcj
+
+	int i;
+
+	for(i=0;i<iVectorSize;i++)//put the real and imaginary parts into their respective fractional arrays
+	{
+		a[i] = compValue1[i].real;
+		b[i] = compValue1[i].imag;
+		c[i] = compValue2[i].real;
+		d[i] = compValue2[i].imag;
+	}
+	VectorMultiply(iVectorSize,ac,a,c);
+	VectorMultiply(iVectorSize,bc,b,c);
+	VectorMultiply(iVectorSize,ad,a,d);
+	VectorMultiply(iVectorSize,bd,b,d);
+
+	VectorAdd(iVectorSize,acbd,ac,bd);
+	VectorAdd(iVectorSize,adbc,ad,bc);
+
+	for(i=0;i<iVectorSize;i++)//put the real and imaginary fractional parts into a single complex fractional number
+	{
+		compResult[i].real=acbd[i];
+		compResult[i].imag=adbc[i];
+	}
+}
+
+void combinationVectorMultiply(int iVectorSize,fractional *frctResult1,fractcomplex *compResult2,fractional *frctValue1,fractcomplex *compValue2)
+{
+	int i=0;
+	fractcomplex compTempValue1[iVectorSize];
+	
+	for(i=0;i<iVectorSize;i++)
+	{
+		compTempValue1[i].real = frctValue1[i];//put the fractional value 1 into the real part of a single complex fractional number
+		compTempValue1[i].imag = 0;
+	}
+
+	complexVectorMultiply(iVectorSize,compResult2,compTempValue1,compValue2);
+	
+	for(i=0;i<iVectorSize;i++)//put the real part of the single complex fractional result into a fractional number
+	{
+		frctResult1[i] = compResult2[i].real;
+	}
+}

@@ -1,0 +1,55 @@
+#include "..\inc\complexmultiply.h"
+#include <dsp.h>
+
+void ComplexVectorMultiply(int VectorSize,fractcomplex *Result,fractcomplex *Value1,fractcomplex *Value2)
+{
+	fractional a[VectorSize],b[VectorSize],c[VectorSize],d[VectorSize];
+
+	fractional ac[VectorSize],bc[VectorSize],ad[VectorSize],bd[VectorSize];
+
+	fractional acbd[VectorSize],adbc[VectorSize];
+
+	int i;
+
+	for(i=0;i<VectorSize;i++)
+	{
+		a[i] = Value1[i].real;
+		b[i] = Value1[i].imag;
+		c[i] = Value2[i].real;
+		d[i] = Value2[i].imag;
+	}
+	
+	VectorMultiply(VectorSize,ac,a,c);
+	VectorMultiply(VectorSize,bc,b,c);
+	VectorMultiply(VectorSize,ad,a,d);
+	VectorMultiply(VectorSize,bd,b,d);
+
+	VectorAdd(VectorSize,acbd,ac,bd);
+	VectorAdd(VectorSize,adbc,ad,bc);
+
+	for(i=0;i<VectorSize;i++)
+	{
+		Result[i].real=acbd[i];
+		Result[i].imag=adbc[i];
+	}
+}
+
+void CombinationVectorMultiply(int VectorSize,fractional *Result,fractional *Value1,fractcomplex *Value2)
+{
+	int i=0;
+	fractcomplex TempValue1[VectorSize];
+	fractcomplex TempResult[VectorSize];
+
+	for(i=0;i<VectorSize;i++)
+	{
+		TempValue1[i].real = Value1[i];
+		TempValue1[i].imag = 0;
+	}
+
+	ComplexVectorMultiply(VectorSize,TempResult,TempValue1,Value2);
+	
+	for(i=0;i<VectorSize;i++)
+	{
+		Result[i] = TempResult[i].real;
+	}
+}

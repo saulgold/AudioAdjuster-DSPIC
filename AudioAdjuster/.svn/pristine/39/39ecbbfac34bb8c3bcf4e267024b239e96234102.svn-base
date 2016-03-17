@@ -1,0 +1,8 @@
+#ifndef __MODULATOR_H__
+#define __MODULATOR_H__
+
+#include <dsp\inc\dsp.h>
+
+void createCarrierSignal(float fCarrierFrequency,int iFrameSize,fractcomplex *compCarrierSignal);
+
+#endif

@@ -1,0 +1,9 @@
+#ifndef __FILTER_H__
+#define __FILTER_H__
+
+#include <dsp\inc\dsp.h>
+
+void initFilter();
+void filter(fractional *AudioIn, fractional *AudioWorkSpace,int FrameSize);
+
+#endif
